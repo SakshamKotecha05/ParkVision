@@ -49,8 +49,14 @@ CIS_WEIGHTS = {                # must sum to 1.0
     "peak": 0.10, "vehicle": 0.10, "recurrence": 0.05,
 }
 
-# Provisional — CONFIRM against IST hour distribution in Task 3 before trusting.
-PEAK_HOURS_IST = set(range(8, 11)) | set(range(17, 21))
+# LOCKED in Task 3 against the real IST hour distribution (298,450 records).
+# The data is a single unimodal *morning enforcement* block peaking 10–11 IST;
+# 08–11 IST = 39.4% of all records. There is NO evening peak (17–21 IST = 0.2%),
+# so the provisional rush-hour evening window was dropped.
+# NOTE: created_datetime is anonymization-synthesized below hour granularity
+# (100% of seconds == :46, minutes ~uniform) — hour-of-day is the finest
+# trustworthy resolution, and reflects enforcement logging, not live congestion.
+PEAK_HOURS_IST = {8, 9, 10, 11}
 
 
 def severity_weight(label: str) -> float:
