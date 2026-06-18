@@ -9,6 +9,8 @@ are computed from the training window only (see `zone_static_features(before=)`)
 """
 import numpy as np
 import pandas as pd
+import lightgbm as lgb
+from scipy.stats import spearmanr
 from .config import severity_weight, PEAK_HOURS_IST
 from .cis import assign_zone
 
@@ -56,3 +58,51 @@ def zone_static_features(violations, before=None):
              .agg(morning_share=("is_morning", "mean"), total_n=("is_morning", "size"))
              .reset_index())
     return out
+
+
+def train_forecaster(history, target="risk"):
+    model = lgb.LGBMRegressor(
+        n_estimators=300, learning_rate=0.05, num_leaves=31,
+        min_child_samples=20, subsample=0.8, subsample_freq=1,
+        colsample_bytree=0.9, random_state=42, n_jobs=-1, verbose=-1,
+    )
+    model.fit(history[FEATURES], history[target])
+    return model
+
+
+def latest_zone_features(panel, static):
+    if panel.empty:
+        return pd.DataFrame(columns=["zone_id", "lat", "lon", "roll7", "roll28", "morning_share"])
+    last = (panel.sort_values("period")
+                 .groupby("zone_id")
+                 .tail(1)[["zone_id", "lat", "lon", "roll7", "roll28"]])
+    return last.merge(static[["zone_id", "morning_share"]], on="zone_id", how="left").reset_index(drop=True)
+
+
+def predict_risk(model, zones, when):
+    z = zones.copy()
+    z["dow"] = pd.Timestamp(when).dayofweek
+    pred = np.clip(model.predict(z[FEATURES]), 0.0, None)
+    return pd.DataFrame({"zone_id": z["zone_id"].to_numpy(), "risk": pred})
+
+
+def backtest(violations, train_end="2024-02-29", valid_end="2024-03-31", min_total=5):
+    train_end, valid_end = pd.Timestamp(train_end), pd.Timestamp(valid_end)
+    panel = build_panel(violations, min_total=min_total)
+    static = zone_static_features(violations, before=train_end)        # leak-safe: train-only
+    panel = panel.merge(static[["zone_id", "morning_share"]], on="zone_id", how="left")
+
+    train = panel[panel["period"] <= train_end]
+    valid = panel[(panel["period"] > train_end) & (panel["period"] <= valid_end)]
+    meta = {"n_train": int(len(train)), "n_valid": int(len(valid)),
+            "train_end": str(train_end.date()), "valid_end": str(valid_end.date())}
+    if train.empty or valid.empty:
+        return {"spearman": float("nan"), "mae": float("nan"), "n_zones_valid": 0, **meta}
+
+    model = train_forecaster(train)
+    valid = valid.copy()
+    valid["pred"] = np.clip(model.predict(valid[FEATURES]), 0.0, None)
+    agg = valid.groupby("zone_id").agg(pred=("pred", "sum"), actual=("risk", "sum"))
+    rho = float(spearmanr(agg["pred"], agg["actual"]).statistic) if len(agg) > 1 else float("nan")
+    mae = float((valid["pred"] - valid["risk"]).abs().mean())
+    return {"spearman": rho, "mae": mae, "n_zones_valid": int(len(agg)), **meta}
