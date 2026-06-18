@@ -1,9 +1,16 @@
 import ast
+import re
 import pandas as pd
 from .config import DATA_PATH, IST, BBOX
 
+_ARTERIAL = re.compile(r"highway|ring road|flyover|elevated|expressway|nice road|underpass|\bnh[\s-]?\d")
+_MAIN     = re.compile(r"main road|main rd|\bmain\b")
+_CROSS    = re.compile(r"\bcross\b")
+_ROAD     = re.compile(r"\broad\b|\brd\b|\bstreet\b|\bst\b|marg|avenue")
+_RESID    = re.compile(r"layout|nagar|colony|block|extension|garden|puram|pura\b|town|circle|stage")
+
 _KEEP = ["id", "latitude", "longitude", "violation", "vehicle_type",
-         "junction_name", "police_station", "validation_status",
+         "junction_name", "road_type", "police_station", "validation_status",
          "dt_ist", "hour", "dow", "date"]
 
 def parse_violation_types(raw) -> list[str]:
@@ -14,6 +21,18 @@ def parse_violation_types(raw) -> list[str]:
     except (ValueError, SyntaxError):
         return []
     return [str(x).strip() for x in val] if isinstance(val, list) else []
+
+def classify_road_type(location) -> str:
+    """Classify the road class from the first segment of a `location` address string."""
+    if not isinstance(location, str) or not location.strip():
+        return "unknown"
+    s = location.split(",")[0].lower().strip()
+    if _ARTERIAL.search(s): return "arterial"
+    if _MAIN.search(s):     return "main"
+    if _CROSS.search(s):    return "cross"
+    if _ROAD.search(s):     return "road"
+    if _RESID.search(s):    return "residential"
+    return "unknown"
 
 def load_violations(path=DATA_PATH) -> pd.DataFrame:
     df = pd.read_csv(path, low_memory=False)
@@ -26,6 +45,11 @@ def load_violations(path=DATA_PATH) -> pd.DataFrame:
     df["hour"] = ts.dt.hour
     df["dow"] = ts.dt.dayofweek
     df["date"] = ts.dt.date
+
+    if "location" in df.columns:
+        df["road_type"] = df["location"].apply(classify_road_type)
+    else:
+        df["road_type"] = "unknown"
 
     m = (df["latitude"].between(BBOX["lat_min"], BBOX["lat_max"]) &
          df["longitude"].between(BBOX["lon_min"], BBOX["lon_max"]))

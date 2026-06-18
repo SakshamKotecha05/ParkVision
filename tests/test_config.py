@@ -18,3 +18,9 @@ def test_vehicle_footprint_known_and_default():
 
 def test_data_path_points_at_csv():
     assert config.DATA_PATH.name.endswith(".csv")
+
+def test_road_weight_known_and_default():
+    assert config.road_weight("arterial") == 1.0
+    assert config.road_weight("main") == 0.7
+    assert config.road_weight("residential") == 0.2
+    assert config.road_weight("UNSEEN") == config.DEFAULT_ROAD_WEIGHT

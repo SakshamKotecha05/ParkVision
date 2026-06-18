@@ -44,9 +44,21 @@ VEHICLE_FOOTPRINT = {          # lane-width proxy
 }
 DEFAULT_FOOTPRINT = 0.3
 
+# Road-class congestion weight (0–1): how much a blocked lane on this class hurts flow.
+# road_type is derived from the `location` text by ingest.classify_road_type (~96.8% classified).
+ROAD_WEIGHTS = {
+    "arterial": 1.0,     # highway / ring road / flyover / NH / expressway
+    "main": 0.7,         # main road
+    "road": 0.5,         # generic named road
+    "cross": 0.4,        # grid cross-street
+    "residential": 0.2,  # block / layout / colony / nagar
+    "unknown": 0.4,
+}
+DEFAULT_ROAD_WEIGHT = 0.4
+
 CIS_WEIGHTS = {                # must sum to 1.0
     "severity": 0.35, "density": 0.25, "junction": 0.15,
-    "peak": 0.10, "vehicle": 0.10, "recurrence": 0.05,
+    "roadtype": 0.10, "vehicle": 0.10, "recurrence": 0.05,
 }
 
 # LOCKED in Task 3 against the real IST hour distribution (298,450 records).
@@ -65,3 +77,7 @@ def severity_weight(label: str) -> float:
 
 def vehicle_footprint(vtype: str) -> float:
     return VEHICLE_FOOTPRINT.get(vtype, DEFAULT_FOOTPRINT)
+
+
+def road_weight(road_type: str) -> float:
+    return ROAD_WEIGHTS.get(road_type, DEFAULT_ROAD_WEIGHT)

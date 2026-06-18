@@ -14,8 +14,10 @@ def test_load_explodes_and_filters(raw_csv):
     assert len(df) == 3
     assert set(df["id"]) == {"A", "B"}
     assert (df.columns == ["id","latitude","longitude","violation","vehicle_type",
-            "junction_name","police_station","validation_status",
+            "junction_name","road_type","police_station","validation_status",
             "dt_ist","hour","dow","date"]).all()
+    assert df[df["id"] == "A"].iloc[0]["road_type"] == "main"
+    assert df[df["id"] == "B"].iloc[0]["road_type"] == "cross"
 
 def test_times_converted_to_ist(raw_csv):
     df = ingest.load_violations(raw_csv)
@@ -23,3 +25,13 @@ def test_times_converted_to_ist(raw_csv):
     assert a["hour"] == 8          # 02:30 UTC -> 08:00 IST
     b = df[df["id"] == "B"].iloc[0]
     assert b["hour"] == 23         # 18:00 UTC -> 23:30 IST
+
+def test_classify_road_type():
+    assert ingest.classify_road_type("Outer Ring Road, BTM Layout, Bengaluru") == "arterial"
+    assert ingest.classify_road_type("NH 75, Somewhere") == "arterial"
+    assert ingest.classify_road_type("18th Main Road, Block 2, Koramangala") == "main"
+    assert ingest.classify_road_type("6th Cross Road, Manasa Layout") == "cross"
+    assert ingest.classify_road_type("Kalidasa Road, Gandhinagar") == "road"
+    assert ingest.classify_road_type("Koramangala 2nd Block") == "residential"
+    assert ingest.classify_road_type("") == "unknown"
+    assert ingest.classify_road_type(float("nan")) == "unknown"
