@@ -22,6 +22,8 @@ def score_zones(violations, precision=GEOHASH_PRECISION, weights=CIS_WEIGHTS):
     df["veh"] = df["vehicle_type"].map(vehicle_footprint)
     df["road"] = df["road_type"].map(road_weight)
     df["at_junction"] = df["junction_name"].fillna("No Junction").ne("No Junction")
+    df["is_hi"] = df["sev"] == 1.0
+    df["police_station"] = df["police_station"].fillna("Unknown")
 
     g = df.groupby("zone_id")
     z = pd.DataFrame({
@@ -33,6 +35,8 @@ def score_zones(violations, precision=GEOHASH_PRECISION, weights=CIS_WEIGHTS):
         "road_mean": g["road"].mean(),
         "vehicle_ftpt": g["veh"].mean(),
         "recurrence": g["date"].nunique(),
+        "high_impact": g["is_hi"].sum().astype(int),
+        "station": g["police_station"].agg(lambda s: s.value_counts().idxmax()),
     })
     comp = pd.DataFrame({
         "c_severity": _minmax(z["severity_sum"]),

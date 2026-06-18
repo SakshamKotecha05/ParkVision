@@ -26,3 +26,27 @@ def test_score_in_range_and_ranks_high_impact_higher():
     assert z["cis"].notna().all()
     assert {"c_severity","c_density","c_junction","c_roadtype","c_vehicle","c_recurrence"} <= set(z.columns)
     assert z.iloc[0]["zone_id"] == cis.assign_zone(pd.DataFrame([rows[0]]))["zone_id"].iloc[0]
+
+def test_score_zones_emits_high_impact_count():
+    rows = []
+    # zone H: 3 high-impact (sev==1.0) + 1 medium
+    for d in range(1, 4):
+        rows.append(_v(f"h{d}", 12.9700, 77.5900, "PARKING IN A MAIN ROAD",
+                       junction="BTP082 - KR Market Junction", date=f"2024-01-{d:02d}"))
+    rows.append(_v("h4", 12.9700, 77.5900, "WRONG PARKING", date="2024-01-04"))
+    z = cis.score_zones(pd.DataFrame(rows))
+    assert "high_impact" in z.columns
+    assert int(z.iloc[0]["high_impact"]) == 3        # only the 3 sev==1.0 rows
+
+def test_score_zones_emits_dominant_station():
+    rows = [
+        _v("a", 12.9700, 77.5900, "NO PARKING"),
+        _v("b", 12.97001, 77.59001, "NO PARKING"),
+        _v("c", 12.97002, 77.59002, "NO PARKING"),
+    ]
+    df = pd.DataFrame(rows)
+    df.loc[df["id"].isin(["a", "b"]), "police_station"] = "City Market"
+    df.loc[df["id"] == "c", "police_station"] = "Madiwala"
+    z = cis.score_zones(df)
+    assert "station" in z.columns
+    assert z.iloc[0]["station"] == "City Market"     # 2 of 3 -> dominant
