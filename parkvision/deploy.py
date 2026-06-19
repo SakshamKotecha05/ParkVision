@@ -58,3 +58,24 @@ def plan_deployment(scored_zones, k, shift=None, radius_m=500, n_baseline=40, se
              "covered_pct": round(covered_pct, 1), "baseline_pct": round(base, 1),
              "efficiency": round(covered_pct / base, 1) if base > 0 else float("inf")}
     return plan, stats
+
+
+def roi_curve(scored_zones, k_values=None, radius_m=500, n_baseline=20, seed=0):
+    if k_values is None:
+        k_values = [5, 10, 15, 20, 25, 30, 40, 50]
+    rows, prev = [], 0.0
+    for k in k_values:
+        _, stats = plan_deployment(scored_zones, k, radius_m=radius_m,
+                                   n_baseline=n_baseline, seed=seed)
+        rows.append({"k": int(k), "covered_pct": stats["covered_pct"],
+                     "baseline_pct": stats["baseline_pct"], "efficiency": stats["efficiency"],
+                     "marginal_gain": round(stats["covered_pct"] - prev, 1)})
+        prev = stats["covered_pct"]
+    return pd.DataFrame(rows, columns=["k", "covered_pct", "baseline_pct", "efficiency", "marginal_gain"])
+
+
+def recommend_k(curve, min_marginal=2.0):
+    below = curve[curve["marginal_gain"] < min_marginal]
+    if len(below):
+        return int(below.iloc[0]["k"])
+    return int(curve["k"].iloc[-1])
