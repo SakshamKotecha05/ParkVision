@@ -106,3 +106,22 @@ def backtest(violations, train_end="2024-02-29", valid_end="2024-03-31", min_tot
     rho = float(spearmanr(agg["pred"], agg["actual"]).statistic) if len(agg) > 1 else float("nan")
     mae = float((valid["pred"] - valid["risk"]).abs().mean())
     return {"spearman": rho, "mae": mae, "n_zones_valid": int(len(agg)), **meta}
+
+
+def zone_trend(violations, min_weeks=3):
+    df = assign_zone(violations)
+    df["sev"] = df["violation"].map(severity_weight)
+    df["week"] = _period(df).dt.to_period("W").dt.start_time
+    df = df.dropna(subset=["week"])
+    weekly = df.groupby(["zone_id", "week"])["sev"].sum().reset_index(name="risk")
+
+    out = []
+    for zid, grp in weekly.groupby("zone_id"):
+        g = grp.sort_values("week")
+        if len(g) < min_weeks:
+            out.append({"zone_id": zid, "slope": 0.0, "rising": False})
+            continue
+        x = np.arange(len(g), dtype=float)
+        slope = float(np.polyfit(x, g["risk"].to_numpy(dtype=float), 1)[0])
+        out.append({"zone_id": zid, "slope": slope, "rising": bool(slope > 1e-9)})
+    return pd.DataFrame(out, columns=["zone_id", "slope", "rising"])
