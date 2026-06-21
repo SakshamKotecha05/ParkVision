@@ -30,3 +30,4 @@ venv/
 # --- Secrets ---
 .env
 *.key
+.gstack/
