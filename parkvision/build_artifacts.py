@@ -1,4 +1,5 @@
 import json
+import math
 from pathlib import Path
 import pandas as pd
 from . import ingest, cis, hotspots, validate, forecast, deploy
@@ -7,6 +8,10 @@ from .config import ARTIFACTS, DATA_PATH
 _FC_COLS = ["zone_id", "risk", "slope", "rising"]
 _FRAMING = ("Enforcement-pattern forecast, not a congestion clock: created_datetime is "
             "enforcement-logging time, synthetic below the hour (spec §11).")
+
+
+def _json_safe(d):
+    return {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in d.items()}
 
 
 def _forecast_frame(violations, when):
@@ -47,7 +52,7 @@ def build(out_dir=ARTIFACTS, data_path=DATA_PATH) -> dict:
     hotspots.rank_hotspots(zones_h, top_n=50).to_parquet(out / "hotspots.parquet", index=False)
     (out / "validation.json").write_text(json.dumps(val, indent=2))
     fc.to_parquet(out / "forecast.parquet", index=False)
-    (out / "forecast_metrics.json").write_text(json.dumps(metrics, indent=2))
+    (out / "forecast_metrics.json").write_text(json.dumps(_json_safe(metrics), indent=2, allow_nan=False))
     plan.to_parquet(out / "deploy_plan.parquet", index=False)
     curve.to_parquet(out / "roi_curve.parquet", index=False)
     blind.to_parquet(out / "blind_spots.parquet", index=False)

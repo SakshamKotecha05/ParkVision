@@ -75,6 +75,7 @@ def roi_curve(scored_zones, k_values=None, radius_m=500, n_baseline=20, seed=0):
 
 
 def recommend_k(curve, min_marginal=2.0):
+    curve = curve.sort_values("k")
     below = curve[curve["marginal_gain"] < min_marginal]
     if len(below):
         return int(below.iloc[0]["k"])

@@ -29,6 +29,29 @@ def test_lags_use_only_the_past_no_leakage():
     # day 3 risk = 3*sev(main=1.0)=3.0; roll7 = mean(prior risks 1.0, 2.0) = 1.5  (excludes day 3 itself)
     assert abs(p.iloc[2]["roll7"] - 1.5) < 1e-9
 
+def test_build_panel_lags_are_per_zone_no_cross_bleed():
+    # Two distinct zones (different geohash-precision-7 cells), each with >=5 rows
+    # spread over >=2 distinct days, so both clear min_total=5 and sort adjacently
+    # by zone_id. Old buggy code (shift+rolling on an ungrouped Series, then
+    # reset_index) let the 2nd zone's earliest-day roll7/roll28 inherit values
+    # carried over from the 1st zone's tail instead of starting at 0.0.
+    rows = []
+    for d in range(1, 4):                                    # zone A: 3 days x 2 rows = 6 rows
+        for k in range(2):
+            rows.append(_v(f"a{d}_{k}", 12.9700, 77.5900, f"2024-01-{d:02d}"))
+    for d in range(1, 4):                                    # zone B: 3 days x 2 rows = 6 rows
+        for k in range(2):
+            rows.append(_v(f"b{d}_{k}", 12.8000, 77.7000, f"2024-01-{d:02d}"))
+
+    p = forecast.build_panel(pd.DataFrame(rows), min_total=5)
+    assert p["zone_id"].nunique() == 2                       # both zones survive
+
+    for zid, grp in p.groupby("zone_id"):
+        first_row = grp.sort_values("period").iloc[0]
+        assert first_row["roll7"] == 0.0
+        assert first_row["roll28"] == 0.0
+
+
 def test_static_features_morning_share_and_before_cutoff():
     rows = [_v("a", 12.97, 77.59, "2024-01-01", hour=9),    # peak (8-11)
             _v("b", 12.97, 77.59, "2024-01-02", hour=15),   # off-peak

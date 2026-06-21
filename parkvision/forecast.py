@@ -40,10 +40,8 @@ def build_panel(violations, min_total=5):
                .sort_values(["zone_id", "period"]))
     daily["dow"] = daily["period"].dt.dayofweek
     g = daily.groupby("zone_id")["risk"]
-    daily["roll7"] = (g.shift(1).rolling(7, min_periods=1).mean()
-                       .reset_index(level=0, drop=True))
-    daily["roll28"] = (g.shift(1).rolling(28, min_periods=1).mean()
-                        .reset_index(level=0, drop=True))
+    daily["roll7"] = g.transform(lambda s: s.shift(1).rolling(7, min_periods=1).mean())
+    daily["roll28"] = g.transform(lambda s: s.shift(1).rolling(28, min_periods=1).mean())
     daily[["roll7", "roll28"]] = daily[["roll7", "roll28"]].fillna(0.0)
     return daily[_PANEL_COLS].reset_index(drop=True)
 
