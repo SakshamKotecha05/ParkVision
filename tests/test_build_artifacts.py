@@ -12,3 +12,5 @@ def test_build_writes_artifacts(raw_csv, tmp_path):
     v = json.loads((tmp_path / "validation.json").read_text())
     assert set(v) >= {"top_n", "overlap_pct", "n_top_zones"}
     assert summary["n_zones"] == len(z)
+    assert {"n_officers", "top_officer_share", "single_source"}.issubset(set(z.columns))
+    assert {"repeat_offender_share", "n_repeat_vehicles"}.issubset(set(z.columns))

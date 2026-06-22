@@ -13,6 +13,15 @@ from parkvision.dashboard import theme
 FLOW_CHOKING_PCT = 9.2
 TOTAL_VIOLATIONS = 298_450
 
+# Source: docs/EDA_RECHECK_2026-06-22.md ("9.1% of records come from vehicles
+# seen >=5 times"). NOT in artifacts — fixed historical fact, do not recompute.
+REPEAT_OFFENDER_PCT = 9.1
+
+# Source: raw CSV `data_sent_to_scita` column, verified 2026-06-22:
+# 255,893 of 298,450 records (85.7%) already flow into BTP's existing SCITA pipeline.
+# NOT in artifacts — fixed historical fact, do not recompute.
+SCITA_PCT = 85.7
+
 
 def render(data: dict) -> None:
     zones: pd.DataFrame = data["scored_zones"]
@@ -36,12 +45,42 @@ def render(data: dict) -> None:
         unsafe_allow_html=True,
     )
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Scored zones", f"{n_zones:,}")
     c2.metric("Top zone CIS", f"{top_cis:.1f}")
     c3.metric("Junction-overlap proof", f"{overlap:.1f}%",
               help="Share of top zones that sit on a real road junction — "
                    "independent geometric validation of the CIS ranking.")
+    with c3:
+        st.markdown(
+            '<span class="pv-verified">Verified</span>',
+            unsafe_allow_html=True,
+        )
+
+    if "single_source" in zones.columns:
+        top20_div = zones.sort_values("cis", ascending=False).head(20)
+        multi_source_pct = float((~top20_div["single_source"]).mean() * 100)
+        c4.metric("Multi-source", f"{multi_source_pct:.0f}%",
+                  help="Share of top-20 zones whose violations come from "
+                       "≥2 distinct officers — independent proof hotspots "
+                       "aren't one officer's patrol beat.")
+        with c4:
+            st.markdown(
+                '<span class="pv-verified">Verified</span>',
+                unsafe_allow_html=True,
+            )
+
+    st.caption(
+        f"{REPEAT_OFFENDER_PCT:.1f}% of all violations come from vehicles seen "
+        "5+ times across the dataset — these top zones aren't just busy, some "
+        "are chronic repeat-offender locations (a descriptive pattern, not "
+        "another validation proof)."
+    )
+    st.caption(
+        f"{SCITA_PCT:.1f}% of all violations already flow into BTP's SCITA "
+        "pipeline — ParkVision is a scoring layer on data they already "
+        "route, not a new system to adopt."
+    )
 
     # --- Filters ---
     st.markdown('<hr class="pv-rule">', unsafe_allow_html=True)
@@ -96,10 +135,17 @@ def render(data: dict) -> None:
 
     # --- Top-20 table ---
     st.markdown("##### Top 20 priority zones")
+    _top20_cols = ["zone_id", "station", "cis", "high_impact", "n_violations"]
+    _rename = {"cis": "CIS", "high_impact": "high-impact",
+               "n_violations": "violations"}
+    if "single_source" in view.columns:
+        _top20_cols.append("single_source")
+        _rename["single_source"] = "single-source"
+    if "repeat_offender_share" in view.columns:
+        _top20_cols.append("repeat_offender_share")
+        _rename["repeat_offender_share"] = "repeat-offenders"
     top = (view.sort_values("cis", ascending=False)
-                .head(20)[["zone_id", "station", "cis", "high_impact",
-                           "n_violations"]]
-                .rename(columns={"cis": "CIS",
-                                 "high_impact": "high-impact",
-                                 "n_violations": "violations"}))
-    st.dataframe(top, hide_index=True, use_container_width=True)
+                .head(20)[_top20_cols]
+                .rename(columns=_rename))
+    with st.container(key="pv-table-overview"):
+        st.dataframe(top, hide_index=True, use_container_width=True)

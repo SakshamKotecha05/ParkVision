@@ -60,7 +60,7 @@ def plan_deployment(scored_zones, k, shift=None, radius_m=500, n_baseline=40, se
     return plan, stats
 
 
-def roi_curve(scored_zones, k_values=None, radius_m=500, n_baseline=20, seed=0):
+def roi_curve(scored_zones, k_values=None, radius_m=500, n_baseline=40, seed=0):
     if k_values is None:
         k_values = [5, 10, 15, 20, 25, 30, 40, 50]
     rows, prev = [], 0.0

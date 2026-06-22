@@ -11,7 +11,8 @@ _RESID    = re.compile(r"layout|nagar|colony|block|extension|garden|puram|pura\b
 
 _KEEP = ["id", "latitude", "longitude", "violation", "vehicle_type",
          "junction_name", "road_type", "police_station", "validation_status",
-         "dt_ist", "hour", "dow", "date"]
+         "dt_ist", "hour", "dow", "date", "created_by_id", "device_id",
+         "vehicle_number"]
 
 def parse_violation_types(raw) -> list[str]:
     if not isinstance(raw, str):
@@ -45,11 +46,21 @@ def load_violations(path=DATA_PATH) -> pd.DataFrame:
     df["hour"] = ts.dt.hour
     df["dow"] = ts.dt.dayofweek
     df["date"] = ts.dt.date
+    df = df[df["dt_ist"].notna()]
 
     if "location" in df.columns:
         df["road_type"] = df["location"].apply(classify_road_type)
     else:
         df["road_type"] = "unknown"
+
+    if "created_by_id" not in df.columns:
+        df["created_by_id"] = "unknown"
+
+    if "device_id" not in df.columns:
+        df["device_id"] = "unknown"
+
+    if "vehicle_number" not in df.columns:
+        df["vehicle_number"] = "unknown"
 
     m = (df["latitude"].between(BBOX["lat_min"], BBOX["lat_max"]) &
          df["longitude"].between(BBOX["lon_min"], BBOX["lon_max"]))

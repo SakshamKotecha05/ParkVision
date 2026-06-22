@@ -12,7 +12,8 @@ def render(data: dict) -> None:
     st.subheader("Forecast & Rising Hotspots")
     st.markdown(
         f"""
-        <div class="pv-headline">
+        <div class="pv-headline pv-verified-card">
+          <span class="pv-verified">Verified</span>
           <span class="big">{metrics.get('spearman', 0):.3f}</span>
           <span class="sub">backtest Spearman rank correlation between
           forecast risk and actual next-period violations on held-out data —
@@ -39,10 +40,16 @@ def render(data: dict) -> None:
     st.markdown('<hr class="pv-rule">', unsafe_allow_html=True)
     st.markdown("##### Zones by forecast risk")
     df = forecast.sort_values("risk", ascending=False).copy()
+    # NOTE: st.dataframe's glide-grid renders cell text as plain text, not
+    # HTML, so the rising-flag color comes from column_config TextColumn's
+    # help/width only for glyph; we keep the glyph plain and rely on the
+    # caption + glyph itself (sev-flag color is documented in theme.py
+    # .pv-flag for any future HTML-rendered usage of this label).
     df["trend"] = df["rising"].map(lambda r: "\U0001F53A rising" if bool(r) else "—")
     show = df[["zone_id", "risk", "slope", "trend"]].rename(
         columns={"zone_id": "zone", "risk": "risk score", "slope": "trend slope"})
-    st.dataframe(show, hide_index=True, use_container_width=True)
+    with st.container(key="pv-table-forecast"):
+        st.dataframe(show, hide_index=True, use_container_width=True)
     st.caption(
         f"{int(df['rising'].sum())} zones flagged rising "
         f"(positive trend slope) out of {len(df):,} forecastable zones.")

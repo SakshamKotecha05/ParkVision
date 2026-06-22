@@ -38,6 +38,8 @@ def build(out_dir=ARTIFACTS, data_path=DATA_PATH) -> dict:
 
     violations = ingest.load_violations(data_path)
     zones = cis.score_zones(violations)
+    zones = zones.merge(validate.source_diversity(violations), on="zone_id", how="left")
+    zones = zones.merge(validate.repeat_offenders(violations), on="zone_id", how="left")
     zones_h = hotspots.detect_hotspots(zones)
     val = validate.junction_overlap(zones_h)
 

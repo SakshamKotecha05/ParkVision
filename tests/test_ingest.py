@@ -15,9 +15,20 @@ def test_load_explodes_and_filters(raw_csv):
     assert set(df["id"]) == {"A", "B"}
     assert (df.columns == ["id","latitude","longitude","violation","vehicle_type",
             "junction_name","road_type","police_station","validation_status",
-            "dt_ist","hour","dow","date"]).all()
+            "dt_ist","hour","dow","date","created_by_id","device_id",
+            "vehicle_number"]).all()
     assert df[df["id"] == "A"].iloc[0]["road_type"] == "main"
     assert df[df["id"] == "B"].iloc[0]["road_type"] == "cross"
+
+def test_device_id_defaults_to_unknown_when_missing(raw_csv):
+    # raw_csv fixture does not define device_id -> graceful fallback
+    df = ingest.load_violations(raw_csv)
+    assert df["device_id"].eq("unknown").all()
+
+def test_drops_corrupt_timestamp(raw_csv):
+    df = ingest.load_violations(raw_csv)
+    # D is in-bbox but has an unparseable created_datetime -> must be dropped
+    assert "D" not in set(df["id"])
 
 def test_times_converted_to_ist(raw_csv):
     df = ingest.load_violations(raw_csv)

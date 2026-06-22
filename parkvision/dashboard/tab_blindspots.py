@@ -58,4 +58,5 @@ def render(data: dict) -> None:
                   "high_impact", "n_violations"]].rename(
         columns={"blindspot_rank": "rank", "cis": "CIS",
                  "high_impact": "high-impact", "n_violations": "violations"})
-    st.dataframe(show, hide_index=True, use_container_width=True)
+    with st.container(key="pv-table-blindspots"):
+        st.dataframe(show, hide_index=True, use_container_width=True)

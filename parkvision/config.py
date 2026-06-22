@@ -45,7 +45,7 @@ VEHICLE_FOOTPRINT = {          # lane-width proxy
 DEFAULT_FOOTPRINT = 0.3
 
 # Road-class congestion weight (0–1): how much a blocked lane on this class hurts flow.
-# road_type is derived from the `location` text by ingest.classify_road_type (~96.8% classified).
+# road_type is derived from the `location` text by ingest.classify_road_type (~97.5% classified).
 ROAD_WEIGHTS = {
     "arterial": 1.0,     # highway / ring road / flyover / NH / expressway
     "main": 0.7,         # main road

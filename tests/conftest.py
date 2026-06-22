@@ -11,21 +11,32 @@ def raw_csv(tmp_path):
          "vehicle_type": "CAR", "junction_name": "BTP082 - KR Market Junction",
          "location": "18th Main Road, Block 2, Koramangala, Bengaluru",
          "police_station": "City Market", "validation_status": "approved",
-         "created_datetime": "2024-01-15 02:30:00+00"},
+         "created_datetime": "2024-01-15 02:30:00+00", "created_by_id": "off_1",
+         "vehicle_number": "veh_1"},
         # in-bbox, single label; 18:00 UTC -> 23:30 IST
         {"id": "B", "latitude": 12.93, "longitude": 77.62,
          "violation_type": '["NO PARKING"]',
          "vehicle_type": "SCOOTER", "junction_name": "No Junction",
          "location": "6th Cross Road, Madiwala, Bengaluru",
          "police_station": "Madiwala", "validation_status": "NULL",
-         "created_datetime": "2024-01-15 18:00:00+00"},
+         "created_datetime": "2024-01-15 18:00:00+00", "created_by_id": "off_2",
+         "vehicle_number": "veh_2"},
         # OUT of bbox -> must be dropped
         {"id": "C", "latitude": 0.0, "longitude": 0.0,
          "violation_type": '["NO PARKING"]',
          "vehicle_type": "CAR", "junction_name": "No Junction",
          "location": "Somewhere, Nowhere",
          "police_station": "X", "validation_status": "NULL",
-         "created_datetime": "2024-01-15 05:00:00+00"},
+         "created_datetime": "2024-01-15 05:00:00+00", "created_by_id": "off_3",
+         "vehicle_number": "veh_3"},
+        # in-bbox but corrupt/unparseable created_datetime -> must be dropped
+        {"id": "D", "latitude": 12.95, "longitude": 77.60,
+         "violation_type": '["NO PARKING"]',
+         "vehicle_type": "CAR", "junction_name": "No Junction",
+         "location": "7th Main Road, Indiranagar, Bengaluru",
+         "police_station": "Indiranagar", "validation_status": "NULL",
+         "created_datetime": "not-a-real-timestamp", "created_by_id": "off_4",
+         "vehicle_number": "veh_4"},
     ]
     p = tmp_path / "mini.csv"
     pd.DataFrame(rows).to_csv(p, index=False)
