@@ -1,6 +1,8 @@
 # --- Planning / process files (NOT part of the submission; never commit) ---
 _planning/
 round2details.md
+docs/
+.superpowers/
 
 # --- Data (provided datasets; large, do NOT commit) ---
 # The police CSV is ~109 MB and exceeds GitHub's 100 MB file limit.
