@@ -61,6 +61,13 @@ CIS_WEIGHTS = {                # must sum to 1.0
     "roadtype": 0.10, "vehicle": 0.10, "recurrence": 0.05,
 }
 
+# --- Deployment-optimizer determinism (single source of truth) ----------
+# Pin ONE value for the random-baseline sample count so the patrol-ROI
+# efficiency multiple is single-valued across plan_deployment and roi_curve.
+DEPLOY_N_BASELINE = 40
+DEPLOY_SEED = 0
+DEPLOY_RADIUS_M = 500
+
 # LOCKED in Task 3 against the real IST hour distribution (298,450 records).
 # The data is a single unimodal *morning enforcement* block peaking 10–11 IST;
 # 08–11 IST = 39.4% of all records. There is NO evening peak (17–21 IST = 0.2%),

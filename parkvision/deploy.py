@@ -2,6 +2,8 @@
 import numpy as np
 import pandas as pd
 
+from .config import DEPLOY_N_BASELINE, DEPLOY_SEED, DEPLOY_RADIUS_M
+
 _EARTH_M = 6_371_000.0
 _PLAN_COLS = ["rank", "zone_id", "lat", "lon", "cis",
               "high_impact_covered", "cis_covered", "n_zones_covered"]
@@ -30,7 +32,8 @@ def _random_baseline_pct(lat, lon, hi, k, radius_m, n_baseline, seed):
     return float(np.mean(accs))
 
 
-def plan_deployment(scored_zones, k, shift=None, radius_m=500, n_baseline=40, seed=0):
+def plan_deployment(scored_zones, k, shift=None, radius_m=DEPLOY_RADIUS_M,
+                    n_baseline=DEPLOY_N_BASELINE, seed=DEPLOY_SEED):
     z = scored_zones.sort_values("cis", ascending=False).reset_index(drop=True)
     lat = z["lat"].to_numpy(float); lon = z["lon"].to_numpy(float)
     hi = z["high_impact"].to_numpy(float); cisv = z["cis"].to_numpy(float)
@@ -60,7 +63,8 @@ def plan_deployment(scored_zones, k, shift=None, radius_m=500, n_baseline=40, se
     return plan, stats
 
 
-def roi_curve(scored_zones, k_values=None, radius_m=500, n_baseline=40, seed=0):
+def roi_curve(scored_zones, k_values=None, radius_m=DEPLOY_RADIUS_M,
+              n_baseline=DEPLOY_N_BASELINE, seed=DEPLOY_SEED):
     if k_values is None:
         k_values = [5, 10, 15, 20, 25, 30, 40, 50]
     rows, prev = [], 0.0
