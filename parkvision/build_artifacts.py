@@ -2,7 +2,7 @@ import json
 import math
 from pathlib import Path
 import pandas as pd
-from . import ingest, cis, hotspots, validate, forecast, deploy
+from . import ingest, cis, hotspots, validate, forecast, deploy, sensitivity
 from .config import ARTIFACTS, DATA_PATH
 
 _FC_COLS = ["zone_id", "risk", "slope", "rising"]
@@ -49,10 +49,12 @@ def build(out_dir=ARTIFACTS, data_path=DATA_PATH) -> dict:
     curve = deploy.roi_curve(zones)
     rec_k = deploy.recommend_k(curve)
     blind = validate.blind_spots(zones)
+    sens = sensitivity.sensitivity_report(zones_h)
 
     zones_h.to_parquet(out / "scored_zones.parquet", index=False)
     hotspots.rank_hotspots(zones_h, top_n=50).to_parquet(out / "hotspots.parquet", index=False)
     (out / "validation.json").write_text(json.dumps(val, indent=2))
+    (out / "cis_sensitivity.json").write_text(json.dumps(sens, indent=2))
     fc.to_parquet(out / "forecast.parquet", index=False)
     (out / "forecast_metrics.json").write_text(json.dumps(_json_safe(metrics), indent=2, allow_nan=False))
     plan.to_parquet(out / "deploy_plan.parquet", index=False)
@@ -65,7 +67,8 @@ def build(out_dir=ARTIFACTS, data_path=DATA_PATH) -> dict:
             "spearman": metrics["spearman"],
             "covered_pct": stats["covered_pct"],
             "efficiency": stats["efficiency"],
-            "recommended_k": int(rec_k)}
+            "recommended_k": int(rec_k),
+            "cis_weight_robustness_rho": sens["weight_perturbation_mean_spearman_rho"]}
 
 
 if __name__ == "__main__":
