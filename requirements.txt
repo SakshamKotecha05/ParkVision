@@ -7,3 +7,7 @@ scipy
 scikit-learn
 lightgbm==4.6.0
 pygeohash
+fastapi
+uvicorn[standard]
+httpx
+locust
