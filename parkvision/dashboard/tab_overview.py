@@ -82,6 +82,43 @@ def render(data: dict) -> None:
         "route, not a new system to adopt."
     )
 
+    sens: dict = data["cis_sensitivity"]
+    rho = float(sens["weight_perturbation_mean_spearman_rho"])
+    jaccard: dict = sens["leave_one_out_jaccard"]
+
+    with st.expander("How sensitive is the ranking to our weights?"):
+        st.metric(
+            "Weight robustness (Spearman ρ)", f"{rho:.2f}",
+            help="Mean rank correlation between the top-20 ranking under the "
+                 "chosen CIS weights and the ranking under 100 randomized "
+                 "weight draws. Closer to 1.0 = more robust to the exact "
+                 "weights chosen.",
+        )
+        if rho >= 0.8:
+            st.caption(
+                "The top-zone ranking is robust to the exact CIS weights — "
+                "randomizing the weight mix still recovers nearly the same "
+                "priority list."
+            )
+        else:
+            st.caption(
+                "The top-zone ranking is stable within the high-impact band, "
+                "but the exact ordering shifts with the weights — which is "
+                "why we also validate against real BTP junctions."
+            )
+        jac_df = (
+            pd.DataFrame({"factor": list(jaccard.keys()),
+                          "leave-one-out overlap": list(jaccard.values())})
+            .sort_values("leave-one-out overlap")
+            .reset_index(drop=True)
+        )
+        st.caption(
+            "Leave-one-out overlap: how much the top-20 list changes if a "
+            "factor is dropped and the rest re-normalized. Lower = that "
+            "factor matters more to the ranking."
+        )
+        st.dataframe(jac_df, hide_index=True, use_container_width=True)
+
     # --- Filters ---
     st.markdown('<hr class="pv-rule">', unsafe_allow_html=True)
     st.markdown("##### Filters")

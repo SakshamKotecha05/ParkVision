@@ -11,6 +11,7 @@ def test_artifact_files_covers_all_eight():
     expected = {
         "scored_zones", "hotspots", "forecast", "forecast_metrics",
         "deploy_plan", "roi_curve", "blind_spots", "validation",
+        "cis_sensitivity",
     }
     assert set(app_data.ARTIFACT_FILES) == expected
 
@@ -76,6 +77,9 @@ def test_load_all_reads_all_eight(tmp_path, monkeypatch):
         json.dumps({"spearman": 0.8488, "mae": 2.88}))
     (tmp_path / "validation.json").write_text(
         json.dumps({"top_n": 20, "overlap_pct": 85.0, "n_top_zones": 20}))
+    (tmp_path / "cis_sensitivity.json").write_text(
+        json.dumps({"weight_perturbation_mean_spearman_rho": 0.91,
+                    "leave_one_out_jaccard": {"recency": 0.7}}))
 
     app_data.load_all.clear()  # drop any cached value from a prior test
     data = app_data.load_all()

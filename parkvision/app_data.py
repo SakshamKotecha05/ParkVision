@@ -1,4 +1,4 @@
-"""Cached loader for the 8 pre-built artifacts in ``artifacts/``.
+"""Cached loader for the 9 pre-built artifacts in ``artifacts/``.
 
 Plan 3 is read-only: this module never regenerates artifacts, it only reads
 them. Public accessors are wrapped in ``st.cache_data`` so the Streamlit app
@@ -26,6 +26,7 @@ ARTIFACT_FILES: dict[str, str] = {
     "roi_curve": "roi_curve.parquet",
     "blind_spots": "blind_spots.parquet",
     "validation": "validation.json",
+    "cis_sensitivity": "cis_sensitivity.json",
 }
 
 _BUILD_HINT = (
@@ -87,6 +88,11 @@ def load_validation() -> dict:
 
 
 @st.cache_data
+def load_cis_sensitivity() -> dict:
+    return _read_json(ARTIFACTS / ARTIFACT_FILES["cis_sensitivity"])
+
+
+@st.cache_data
 def load_all() -> dict[str, Any]:
     """Return all 8 artifacts keyed by logical name."""
     return {
@@ -98,4 +104,5 @@ def load_all() -> dict[str, Any]:
         "roi_curve": load_roi_curve(),
         "blind_spots": load_blind_spots(),
         "validation": load_validation(),
+        "cis_sensitivity": load_cis_sensitivity(),
     }
