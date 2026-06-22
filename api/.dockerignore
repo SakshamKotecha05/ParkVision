@@ -1,0 +1,27 @@
+# Keep the ParkVision API image small and CSV-free.
+# Build context is the Round2_gsd/ root; these paths are excluded.
+jan to may police violation_anonymized791b166.csv
+Astram event data_anonymized - Astram event data_anonymizedb40ac87.csv
+artifacts/load_test_*
+artifacts/run_load_test_uvicorn.log
+
+tests/
+docs/
+_planning/
+.superpowers/
+.gstack/
+briefings/
+
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.git/
+.gitignore
+.DS_Store
+
+README.md
+HOW_TO_USE.md
+PROJECT_OVERVIEW.md
+round2details.md
+app.py
