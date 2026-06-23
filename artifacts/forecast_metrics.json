@@ -1,0 +1,10 @@
+{
+  "spearman": 0.8487572163792874,
+  "mae": 2.884525359073253,
+  "n_zones_valid": 2402,
+  "n_train": 43835,
+  "n_valid": 11197,
+  "train_end": "2024-02-29",
+  "valid_end": "2024-03-31",
+  "framing": "Enforcement-pattern forecast, not a congestion clock: created_datetime is enforcement-logging time, synthetic below the hour (spec \u00a711)."
+}

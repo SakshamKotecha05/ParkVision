@@ -1,0 +1,23 @@
+{
+  "proxy": true,
+  "method": "weight_perturbation_dirichlet+leave_one_factor_out_jaccard",
+  "base_weights": {
+    "severity": 0.35,
+    "density": 0.25,
+    "junction": 0.15,
+    "roadtype": 0.1,
+    "vehicle": 0.1,
+    "recurrence": 0.05
+  },
+  "n_perturbations": 100,
+  "top_n": 20,
+  "weight_perturbation_mean_spearman_rho": 0.9141407235127792,
+  "leave_one_out_jaccard": {
+    "severity": 0.5384615384615384,
+    "density": 0.9047619047619048,
+    "junction": 0.5384615384615384,
+    "roadtype": 0.8181818181818182,
+    "vehicle": 0.9047619047619048,
+    "recurrence": 1.0
+  }
+}

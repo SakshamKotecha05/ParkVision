@@ -11,8 +11,20 @@ Astram event data_anonymized*.csv
 *.csv.gz
 
 # --- Generated artifacts ---
-artifacts/
+# Dashboard/API are read-only consumers (no build step on Streamlit Cloud),
+# so the 9 files app_data.py reads must ship in the repo. Everything else
+# generated under artifacts/ (load-test logs, scratch parquet) stays ignored.
+artifacts/*
 *.parquet
+!artifacts/scored_zones.parquet
+!artifacts/hotspots.parquet
+!artifacts/forecast.parquet
+!artifacts/forecast_metrics.json
+!artifacts/deploy_plan.parquet
+!artifacts/roi_curve.parquet
+!artifacts/blind_spots.parquet
+!artifacts/validation.json
+!artifacts/cis_sensitivity.json
 briefings/
 
 # --- Python ---
