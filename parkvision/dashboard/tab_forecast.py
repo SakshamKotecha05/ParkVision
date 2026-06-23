@@ -49,7 +49,7 @@ def render(data: dict) -> None:
     show = df[["zone_id", "risk", "slope", "trend"]].rename(
         columns={"zone_id": "zone", "risk": "risk score", "slope": "trend slope"})
     with st.container(key="pv-table-forecast"):
-        st.dataframe(show, hide_index=True, use_container_width=True)
+        st.dataframe(show, hide_index=True, width="stretch")
     st.caption(
         f"{int(df['rising'].sum())} zones flagged rising "
         f"(positive trend slope) out of {len(df):,} forecastable zones.")

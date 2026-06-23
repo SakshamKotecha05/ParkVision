@@ -117,7 +117,7 @@ def render(data: dict) -> None:
             "factor is dropped and the rest re-normalized. Lower = that "
             "factor matters more to the ranking."
         )
-        st.dataframe(jac_df, hide_index=True, use_container_width=True)
+        st.dataframe(jac_df, hide_index=True, width="stretch")
 
     # --- Filters ---
     st.markdown('<hr class="pv-rule">', unsafe_allow_html=True)
@@ -185,4 +185,4 @@ def render(data: dict) -> None:
                 .head(20)[_top20_cols]
                 .rename(columns=_rename))
     with st.container(key="pv-table-overview"):
-        st.dataframe(top, hide_index=True, use_container_width=True)
+        st.dataframe(top, hide_index=True, width="stretch")

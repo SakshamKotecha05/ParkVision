@@ -91,7 +91,7 @@ def render(data: dict) -> None:
         gridColor=theme.PAPER_3,
         domainColor=theme.PAPER_3,
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
     st.caption(f"Recommended operating point: K={RECOMMENDED_K} "
                f"({roi.loc[roi['k'] == RECOMMENDED_K, 'covered_pct'].iloc[0]:.1f}% "
                "high-impact covered).")
@@ -102,4 +102,4 @@ def render(data: dict) -> None:
         columns={"cis": "CIS", "high_impact_covered": "high-impact covered",
                  "n_zones_covered": "zones covered"})
     with st.container(key="pv-table-deploy"):
-        st.dataframe(show, hide_index=True, use_container_width=True)
+        st.dataframe(show, hide_index=True, width="stretch")

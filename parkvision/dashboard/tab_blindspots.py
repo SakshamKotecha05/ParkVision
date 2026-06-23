@@ -59,4 +59,4 @@ def render(data: dict) -> None:
         columns={"blindspot_rank": "rank", "cis": "CIS",
                  "high_impact": "high-impact", "n_violations": "violations"})
     with st.container(key="pv-table-blindspots"):
-        st.dataframe(show, hide_index=True, use_container_width=True)
+        st.dataframe(show, hide_index=True, width="stretch")
