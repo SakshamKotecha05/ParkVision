@@ -1,13 +1,7 @@
+# Streamlit Cloud runtime — dashboard deps only.
+# Full project deps (training, API, load-test) live in requirements-dev.txt.
 streamlit==1.51.0
 pydeck==0.9.2
 pandas
 pyarrow
 numpy
-scipy
-scikit-learn
-lightgbm==4.6.0
-pygeohash
-fastapi
-uvicorn[standard]
-httpx
-locust
