@@ -19,28 +19,28 @@ from parkvision.dashboard import (
 st.set_page_config(page_title="ParkVision — Bengaluru Enforcement",
                    page_icon="🚦", layout="wide")
 theme.inject_css()
-
-st.title("ParkVision")
-st.caption("Congestion-Impact ranking for Bengaluru parking-violation "
-           "enforcement — find the few zones that choke traffic flow.")
+theme.render_hero()
 
 data = load_all()
 
-tab_labels = ["Priority Zones", "Forecast", "Deployment Planner",
-              "Blind Spots", "AI Briefings"]
-t1, t2, t3, t4, t5 = st.tabs(tab_labels)
+# Single-page scroll: the hero's top nav is the only nav. Each section gets
+# an anchor the nav links + scroll cue jump to (the old below-hero tab bar
+# is gone).
+theme.section("zones")
+tab_overview.render(data)
 
-with t1:
-    tab_overview.render(data)
-with t2:
-    tab_forecast.render(data)
-with t3:
-    tab_deploy.render(data)
-with t4:
-    tab_blindspots.render(data)
-with t5:
-    try:
-        from parkvision.dashboard import tab_briefing
-        tab_briefing.render(data)
-    except ImportError:
-        st.info("AI Briefings tab arrives in Task 3.")
+theme.section("forecast", divider=True)
+tab_forecast.render(data)
+
+theme.section("deploy", divider=True)
+tab_deploy.render(data)
+
+theme.section("blindspots", divider=True)
+tab_blindspots.render(data)
+
+theme.section("briefings", divider=True)
+try:
+    from parkvision.dashboard import tab_briefing
+    tab_briefing.render(data)
+except ImportError:
+    st.info("AI Briefings tab arrives in Task 3.")

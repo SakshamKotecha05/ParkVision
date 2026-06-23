@@ -62,8 +62,22 @@ _CSS = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Schibsted+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-.stApp {{ background-color: {PAPER}; }}
-.block-container {{ padding-top: 2rem; max-width: 1180px; }}
+.stApp {{ background-color: {PAPER}; overflow-x: hidden; }}
+html {{ scroll-behavior: smooth; }}
+/* Hide Streamlit's top chrome so the full-screen hero owns the very top. */
+header[data-testid="stHeader"] {{ display: none; }}
+/* padding-top 0 so the hero sits flush at the top. */
+.block-container {{ padding-top: 0; max-width: 1180px; }}
+/* The inject_css() call renders a markdown block that holds only this
+   <style>; its flex gap pushed the hero ~16px down. Collapse that one
+   block (the style still applies — style tags are global) so the hero is
+   flush at the top. Scoped to a markdown-with-style so it never hits a
+   chart/map container. */
+[data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style) {{
+  display: none;
+}}
+/* Anchor targets for the hero nav's single-page scroll. */
+.pv-section {{ display: block; height: 0; scroll-margin-top: 1rem; }}
 
 h1, [data-testid="stHeading"] h1 {{
   font-family: {_FONT_DISPLAY};
@@ -394,6 +408,238 @@ div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]) {
   color: {SEV_FLAG};
   font-weight: 500;
 }}
+
+/* --- Hero: full-viewport cinematic video landing ----------------------
+   Full-bleed 100vw x 100svh window into Bengaluru's streets. A top nav
+   sits over the footage; scrolling past the hero reveals the live
+   dashboard below. The "Verified" seal is lifted onto the footage — the
+   one thing that separates ParkVision from a pretty model demo. */
+.pv-hero {{
+  position: relative;
+  /* break out of the centered, max-width block-container to full bleed */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-bottom: 2.2rem;
+  min-height: 100svh;
+  overflow: hidden;
+  /* warm fallback while the video buffers / under reduced-motion */
+  background: linear-gradient(135deg, {INK_2} 0%, {INK} 70%);
+  isolation: isolate;
+}}
+.pv-hero video {{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}}
+/* Warm ink scrim — keeps copy legible over ANY video frame (the footage
+   runs through bright daytime). Tinted to {INK}, never flat black. */
+.pv-hero::after {{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(102deg, rgba(26,23,20,0.9) 0%, rgba(26,23,20,0.66) 34%,
+                    rgba(26,23,20,0.18) 64%, rgba(26,23,20,0) 88%),
+    linear-gradient(0deg, rgba(26,23,20,0.82) 0%, rgba(26,23,20,0.36) 30%,
+                    rgba(26,23,20,0) 58%),
+    /* uniform contrast floor so white copy reads over any bright frame */
+    linear-gradient(rgba(26,23,20,0.26), rgba(26,23,20,0.26));
+}}
+
+/* --- Top nav (over the hero) --------------------------------------- */
+.pv-nav {{
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(1.1rem, 2.4vw, 1.7rem) clamp(1.4rem, 4vw, 3.2rem);
+}}
+.pv-nav__brand {{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: {_FONT_DISPLAY};
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.5);
+}}
+.pv-nav__brand::before {{
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: {BRAND};
+  box-shadow: 0 0 0 4px rgba(217,119,87,0.28);
+}}
+.pv-nav__links {{
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 2vw, 1.9rem);
+}}
+/* .pv-hero prefix out-specifies Streamlit's own `.stMarkdown a` link color,
+   which would otherwise paint these links blue. */
+.pv-hero .pv-nav__links a {{
+  font-family: {_FONT_SANS};
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(255,255,255,0.86);
+  text-decoration: none;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+  transition: color 0.15s ease;
+}}
+.pv-hero .pv-nav__links a:hover {{ color: #fff; }}
+.pv-hero .pv-nav__links a:focus-visible {{ outline: 2px solid #f0a890; outline-offset: 4px; }}
+
+/* --- Centered hero content ----------------------------------------- */
+.pv-hero__inner {{
+  position: relative;
+  z-index: 2;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.55rem;
+  max-width: 780px;
+  padding: clamp(2rem, 6vh, 5rem) clamp(1.4rem, 4vw, 3.2rem);
+}}
+/* Selectors are prefixed with .pv-hero to out-specify Streamlit's own
+   heading / .stMarkdown p rules, which would otherwise force the copy to
+   the dark ink body color over the video. */
+.pv-hero .pv-hero__eyebrow {{
+  font-family: {_FONT_SANS};
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: {BRAND_LINE};
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+}}
+.pv-hero .pv-hero__eyebrow::before {{
+  content: "";
+  width: 24px;
+  height: 2px;
+  background: {BRAND};
+  display: inline-block;
+}}
+.pv-hero .pv-hero__title {{
+  font-family: {_FONT_DISPLAY};
+  font-weight: 700;
+  font-size: clamp(38px, 6.6vw, 82px);
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin: 0.1rem 0;
+  text-wrap: balance;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6), 0 2px 10px rgba(0,0,0,0.55),
+               0 6px 28px rgba(0,0,0,0.4);
+}}
+.pv-hero .pv-hero__title .accent {{ color: #f0a890; }}
+.pv-hero .pv-hero__sub {{
+  font-family: {_FONT_SANS};
+  font-size: clamp(14px, 1.6vw, 17px);
+  line-height: 1.5;
+  color: rgba(255,255,255,0.92);
+  max-width: 50ch;
+  margin: 0.15rem 0 0.25rem 0;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.55);
+}}
+.pv-hero__proof {{
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+}}
+/* On-video variant of the signature seal */
+.pv-hero__proof .pv-verified {{
+  color: #fff;
+  background: rgba(217,119,87,0.24);
+  border: 1px solid rgba(246,205,185,0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}}
+.pv-hero__proof .pv-verified::before {{
+  border-color: #fff;
+  background:
+    linear-gradient(135deg, transparent 42%, #fff 42%, #fff 52%, transparent 52%),
+    linear-gradient(45deg, transparent 55%, #fff 55%, #fff 65%, transparent 65%);
+}}
+.pv-hero__proofnote {{
+  font-family: {_FONT_MONO};
+  font-size: 12px;
+  color: rgba(255,255,255,0.82);
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+}}
+
+/* --- Scroll cue: a pill that invites the reveal of the dashboard ----- */
+.pv-hero .pv-hero__scroll {{
+  position: absolute;
+  left: clamp(1.4rem, 4vw, 3.2rem);
+  bottom: clamp(1.3rem, 3.5vh, 2.4rem);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.4rem 0.4rem 0.4rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.28);
+  background: rgba(26,23,20,0.34);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-family: {_FONT_SANS};
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-decoration: none;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.4);
+  transition: border-color 0.18s ease, background 0.18s ease,
+              transform 0.18s ease;
+}}
+.pv-hero .pv-hero__scroll:hover {{
+  border-color: rgba(246,205,185,0.7);
+  background: rgba(217,119,87,0.32);
+  transform: translateY(-1px);
+}}
+.pv-hero .pv-hero__scroll:focus-visible {{ outline: 2px solid #f0a890; outline-offset: 4px; }}
+.pv-hero .pv-hero__scroll .chev {{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  color: {INK};
+  font-size: 15px;
+  font-weight: 700;
+  text-shadow: none;
+}}
+
+@media (max-width: 640px) {{
+  .pv-nav__links {{ display: none; }}
+  .pv-hero__sub {{ display: none; }}
+}}
+@media (prefers-reduced-motion: reduce) {{
+  html {{ scroll-behavior: auto; }}
+  .pv-hero video {{ display: none; }}
+}}
 </style>
 """
 
@@ -401,6 +647,55 @@ div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]) {
 def inject_css() -> None:
     """Inject the dashboard's custom CSS once per page."""
     st.markdown(_CSS, unsafe_allow_html=True)
+
+
+# Served from ./static/ via [server] enableStaticServing in config.toml.
+# Nav links + scroll cue point at #pv-dash, the anchor rendered just before
+# the dashboard tabs in app.py.
+_HERO_HTML = """
+<section class="pv-hero">
+  <video autoplay muted loop playsinline preload="auto" aria-hidden="true">
+    <source src="app/static/hero_edit.mp4" type="video/mp4">
+  </video>
+  <nav class="pv-nav">
+    <div class="pv-nav__brand">ParkVision</div>
+    <div class="pv-nav__links">
+      <a href="#zones">Priority Zones</a>
+      <a href="#forecast">Forecast</a>
+      <a href="#deploy">Deployment</a>
+      <a href="#blindspots">Blind Spots</a>
+      <a href="#briefings">AI Briefings</a>
+    </div>
+  </nav>
+  <div class="pv-hero__inner">
+    <div class="pv-hero__eyebrow">Bengaluru Traffic Police · Congestion Intelligence</div>
+    <div class="pv-hero__title" role="heading" aria-level="1">The few blocks that <span class="accent">choke the city.</span></div>
+    <p class="pv-hero__sub">ParkVision scores every parking-violation zone by how
+       much it strangles traffic flow — so enforcement hits the 9% that actually
+       jam Bengaluru, not the 91% that don't.</p>
+    <div class="pv-hero__proof">
+      <span class="pv-verified">Verified</span>
+      <span class="pv-hero__proofnote">Ranking validated against real road junctions</span>
+    </div>
+  </div>
+  <a class="pv-hero__scroll" href="#zones">Scroll to explore <span class="chev" aria-hidden="true">↓</span></a>
+</section>
+"""
+
+
+def render_hero() -> None:
+    """Render the full-viewport video hero landing at the top of the page."""
+    st.markdown(_HERO_HTML, unsafe_allow_html=True)
+
+
+def section(anchor: str, divider: bool = False) -> None:
+    """Emit an anchor target (and optional hairline divider) for the hero
+    nav's single-page scroll. Replaces the old below-hero tab bar."""
+    html = ""
+    if divider:
+        html += '<hr class="pv-rule" style="margin:2.4rem 0 2rem;">'
+    html += f'<div id="{anchor}" class="pv-section"></div>'
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def cis_to_color(cis: float, cis_max: float) -> list[int]:

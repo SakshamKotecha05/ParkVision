@@ -33,3 +33,5 @@ venv/
 .env
 *.key
 .gstack/
+
+hero.html
