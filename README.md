@@ -10,9 +10,6 @@ Prototype Phase submitted ahead of the 23 Jun 2026 deadline.
 
 * Live demo: https://parkvision-20.streamlit.app/
 * Repository: https://github.com/SakshamKotecha05/ParkVision
-* Full writeup, headline numbers, and pitch: `ProjectDetail.md`
-* Dashboard user guide: `HOW_TO_USE.md`
-* Deck prompt, video script, and form fields: `SUBMISSION.md`
 
 ## Run it locally
 
