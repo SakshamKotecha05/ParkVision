@@ -1,17 +1,22 @@
 # ParkVision
 
-Congestion-Impact ranking for Bengaluru parking-violation enforcement.
-ParkVision scores ~5,750 zones by a Congestion-Impact Score (CIS), forecasts
-rising hotspots, plans patrol deployments, and surfaces enforcement blind
-spots — exposed through a Streamlit dashboard with per-station AI briefings.
+Congestion impact ranking for Bengaluru's parking enforcement, built for Flipkart Gridlock 2.0, Theme 1: poor visibility on parking induced congestion.
 
-Only ~9.2% of the ~298,450 logged violations actually choke traffic flow.
-ParkVision finds that 9.2% so enforcement effort lands where it matters.
+BTP logs roughly 298,450 parking violation records across the city. Only 9.2% of them actually choke traffic flow: a double-parked truck at a road crossing matters, a defective number plate doesn't. ParkVision scores every ~150m zone in Bengaluru on a 0 to 100 Congestion Impact Score, clusters the worst zones into named hotspots, forecasts which ones are about to get worse, and hands a shift commander a ranked patrol plan, all through a Streamlit dashboard with one click briefings per station.
 
-## Instructions to Run (local)
+## Submission
 
-All commands use the project's Python interpreter; quote the path (it has a
-space).
+Prototype Phase submitted ahead of the 23 Jun 2026 deadline.
+
+* Live demo: https://parkvision-20.streamlit.app/
+* Repository: https://github.com/SakshamKotecha05/ParkVision
+* Full writeup, headline numbers, and pitch: `ProjectDetail.md`
+* Dashboard user guide: `HOW_TO_USE.md`
+* Deck prompt, video script, and form fields: `SUBMISSION.md`
+
+## Run it locally
+
+All commands use the project's Python interpreter. Quote the path; it contains a space.
 
 1. Install dependencies:
 
@@ -19,18 +24,17 @@ space).
    /opt/anaconda3/bin/python -m pip install -r requirements.txt
    ```
 
-2. Place the provided source CSV at the project root (only needed to rebuild
-   artifacts — the dashboard itself reads `artifacts/`, not the CSV):
+2. Place the provided source CSV at the project root. It's only needed to rebuild artifacts; the dashboard itself reads `artifacts/`, never the CSV directly.
 
    `jan to may police violation_anonymized791b166.csv`
 
-3. (Optional) Regenerate the cached artifacts if `artifacts/` is missing:
+3. Regenerate the cached artifacts if `artifacts/` is missing:
 
    ```bash
    /opt/anaconda3/bin/python -m parkvision.build_artifacts
    ```
 
-4. Pre-generate the per-station AI briefings (writes `briefings/*.md`):
+4. Generate the per station AI briefings ahead of time. This writes `briefings/*.md`:
 
    ```bash
    /opt/anaconda3/bin/python -c "from parkvision.briefing import generate_all_briefings; generate_all_briefings()"
@@ -42,45 +46,42 @@ space).
    /opt/anaconda3/bin/python -m streamlit run app.py
    ```
 
-   Open the URL Streamlit prints (default http://localhost:8501).
+   Open the URL Streamlit prints (default `http://localhost:8501`).
 
-## Deploy (Streamlit Community Cloud — live Demo Link)
+Run the test suite with `/opt/anaconda3/bin/python -m pytest`.
 
-The live demo reads only the cached artifacts and briefings, never the 109 MB
-source CSV, and needs no API key.
+## Deploy on Streamlit Community Cloud
 
-1. Create a public GitHub repo and push this project to it.
-2. **Important — ship the artifacts and briefings.** `.gitignore` excludes
-   `artifacts/`, `*.parquet`, and `briefings/`, and the source CSV exceeds
-   GitHub's 100 MB limit. The deployed app needs the small artifact and
-   briefing files (a few hundred KB total), so for the deploy commit, force-add
-   them:
+The live demo reads only the cached artifacts and briefings, never the 109 MB source CSV, and needs no API key.
+
+1. Push this project to a public GitHub repo.
+2. Ship the artifacts and briefings. `.gitignore` excludes `artifacts/*`, `*.parquet`, and `briefings/` by default since the source CSV exceeds GitHub's 100 MB limit, but the eight read only artifact files the app needs are listed as explicit exceptions (see the `!artifacts/...` lines). Briefings still need a force add:
 
    ```bash
-   git add -f artifacts/*.parquet artifacts/*.json briefings/*.md requirements.txt app.py parkvision/
+   git add -f briefings/*.md
    ```
 
-   Do NOT commit the source CSV. (Your normal local `.gitignore` stays as-is;
-   this force-add is only to include the small read-only artifacts the live app
-   serves.)
-3. On https://share.streamlit.io, create a new app pointing at:
-   - **Repository:** your public repo
-   - **Branch:** your default branch
-   - **Main file path:** `app.py`
-   - **Requirements:** `requirements.txt` (auto-detected at repo root)
-4. Deploy. The app boots, `parkvision.app_data.load_all()` reads the committed
-   artifacts, and the AI Briefings tab reads the committed `briefings/*.md`
-   (falling back to live template generation if any file is missing).
-5. Use the resulting `https://<app>.streamlit.app` URL as the submission's
-   Demo Link.
+   Never commit the source CSV.
+3. On https://share.streamlit.io, create a new app: repository = your repo, branch = your default branch, main file path = `app.py`. Requirements at `requirements.txt` are auto detected.
+4. Deploy. `parkvision.app_data.load_all()` reads the committed artifacts on boot; the AI Briefings tab reads the committed `briefings/*.md`, falling back to live template generation if a file is missing.
 
 ## Architecture
 
-- `parkvision/` — modelling pipeline (Plans 1 & 2): ingest, CIS scoring,
-  hotspots, forecast, deploy optimizer, validation, `build_artifacts.py`.
-- `artifacts/` — 8 pre-built read-only files the dashboard consumes.
-- `parkvision/app_data.py` — cached artifact loader.
-- `parkvision/dashboard/` — one render module per dashboard tab.
-- `parkvision/briefing.py` — template-composed per-station briefings (single
-  documented swap point for a future Claude backend).
-- `app.py` — Streamlit entrypoint.
+```
+CSV -> ingest -> tidy violations -> cis -> scored zones -> hotspots -> named hotspots
+                                              |
+                                              +-> deploy -> deployment plan, ROI curve, blind spots
+                          forecast -> each zone's risk for the next window, rising trend flag
+                                              |
+              8 cached artifacts -> Streamlit dashboard (app.py)
+                                 -> FastAPI read only serving layer (api/)
+```
+
+* `parkvision/`: the modelling pipeline. `ingest.py`, `cis.py`, `hotspots.py`, `forecast.py`, `deploy.py`, `validate.py`, `sensitivity.py`, `briefing.py`, `build_artifacts.py`.
+* `parkvision/app_data.py`: cached loader for the eight artifact files.
+* `parkvision/dashboard/`: one render module per Streamlit tab.
+* `artifacts/`: the read only files the dashboard and API consume.
+* `briefings/`: 54 Markdown briefings, one per station, generated in advance.
+* `api/`: FastAPI serving layer over the same artifacts, with `api/Dockerfile` for containerized deploys.
+* `app.py`: the Streamlit entrypoint.
+* `tests/`: pytest suite covering ingest, CIS, forecast, deploy, the API, and integration paths.
